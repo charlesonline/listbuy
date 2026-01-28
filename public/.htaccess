@@ -3,12 +3,10 @@
 # Habilitar RewriteEngine
 RewriteEngine On
 
-# Redirecionar requisições de API para os endpoints corretos
-# Evitar loop: não redirecionar se já estiver em /api/endpoints/
-RewriteCond %{REQUEST_URI} !^/api/endpoints/
+# Redirecionar requisições de API para o arquivo router
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^api/(.+)$ /api/endpoints/$1 [L,QSA]
+RewriteRule ^api/(.*)$ api.php?endpoint=$1 [L,QSA]
 
 # Configurações de segurança
 <IfModule mod_headers.c>

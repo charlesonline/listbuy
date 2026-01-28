@@ -32,9 +32,6 @@ RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/Allo
 # Copiar arquivos da aplicação
 COPY . /var/www/html/
 
-# Criar link simbólico para API ser acessível via public
-RUN ln -sf /var/www/html/api /var/www/html/public/api
-
 # Criar diretório do banco de dados e dar permissões
 RUN mkdir -p /var/www/html/database && \
     chown -R www-data:www-data /var/www/html && \

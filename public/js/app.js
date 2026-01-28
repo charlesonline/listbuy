@@ -7,7 +7,7 @@
 // CONFIGURAÇÃO E ESTADO
 // ========================================
 
-const API_BASE = window.location.origin + '/api/endpoints';
+const API_BASE = window.location.origin + '/api';
 
 const State = {
     token: localStorage.getItem('auth_token') || null,
