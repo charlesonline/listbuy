@@ -8,9 +8,7 @@ services:
       - "8030:80"
     volumes:
       # Montar código fonte (útil para desenvolvimento)
-      - ./public:/var/www/html/public
-      - ./api:/var/www/html/api
-      - ./database:/var/www/html/database
+      - ./:/var/www/html
     environment:
       - PHP_DISPLAY_ERRORS=On
       - PHP_ERROR_REPORTING=E_ALL

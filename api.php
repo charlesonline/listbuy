@@ -33,7 +33,14 @@ if (substr($endpoint, -4) === '.php') {
 }
 
 // Construir o caminho do arquivo
-$file_path = __DIR__ . '/../api/endpoints/' . $endpoint . '.php';
+$file_path = __DIR__ . '/api/endpoints/' . $endpoint . '.php';
+
+// Verificar se o arquivo existe
+if (file_exists($file_path)) {
+    // Incluir o arquivo
+    include $file_path;
+    exit;
+}
 
 // Verificar se o arquivo existe
 if (file_exists($file_path)) {

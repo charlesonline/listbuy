@@ -1,0 +1,3 @@
+# Bloquear acesso direto ao banco de dados
+Order deny,allow
+Deny from all
