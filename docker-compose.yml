@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: lista_compras_app
     ports:
-      - "8080:80"
+      - "8030:80"
     volumes:
       # Montar código fonte (útil para desenvolvimento)
       - ./public:/var/www/html/public
