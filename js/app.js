@@ -80,6 +80,11 @@ function hideModal(modalId) {
 function changeScreen(screenId) {
     $$('.screen').forEach(screen => screen.classList.remove('active'));
     $(`#${screenId}`).classList.add('active');
+    
+    // Parar polling ao sair da tela de itens
+    if (screenId !== 'telaItens') {
+        pararPolling();
+    }
 }
 
 // ========================================
@@ -1292,7 +1297,11 @@ function mostrarLogin() {
     $('#telaLogin').style.display = 'flex';
     $('.app-header').style.display = 'none';
     $('.app-main').style.display = 'none';
-    gerarCaptcha();
+    
+    // Garantir que o captcha seja gerado
+    /* if (!captchaAtual || !$('#captchaTexto').textContent) {
+        gerarCaptcha();
+    } */
 }
 
 function mostrarApp() {
@@ -1314,27 +1323,36 @@ async function fazerLogin(e) {
     
     const username = $('#loginUsername').value;
     const senha = $('#loginSenha').value;
-    const captcha_resposta = $('#loginCaptcha').value;
+    // const captcha_resposta = $('#loginCaptcha').value;
     
-    if (!username || !senha || !captcha_resposta) {
+    if (!username || !senha /* || !captcha_resposta */) {
         mostrarErroLogin('Preencha todos os campos');
         return;
     }
     
+    // Garantir que o captcha foi gerado
+    /* if (!captchaAtual) {
+        gerarCaptcha();
+        mostrarErroLogin('Captcha não foi carregado. Tente novamente.');
+        return;
+    } */
+    
     try {
         showLoading();
+        
+        const payload = {
+            username,
+            senha
+            //, captcha: captchaAtual
+            //, captcha_resposta
+        };
         
         const response = await fetch(`${API_BASE}/login.php`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                username,
-                senha,
-                captcha: captchaAtual,
-                captcha_resposta
-            })
+            body: JSON.stringify(payload)
         });
         
         const result = await response.json();
@@ -1354,14 +1372,14 @@ async function fazerLogin(e) {
             showToast('Login realizado com sucesso!', 'success');
         } else {
             mostrarErroLogin(result.erro || 'Erro ao fazer login');
-            gerarCaptcha();
-            $('#loginCaptcha').value = '';
+            // gerarCaptcha();
+            // $('#loginCaptcha').value = '';
         }
     } catch (error) {
         console.error('Erro no login:', error);
         mostrarErroLogin('Erro ao conectar com o servidor');
-        gerarCaptcha();
-        $('#loginCaptcha').value = '';
+        // gerarCaptcha();
+        // $('#loginCaptcha').value = '';
     } finally {
         showLoading(false);
     }

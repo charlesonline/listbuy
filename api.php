@@ -10,6 +10,13 @@ $request_uri = $_SERVER['REQUEST_URI'];
 // Extrair o endpoint da query string se existir
 if (isset($_GET['endpoint'])) {
     $endpoint = $_GET['endpoint'];
+    
+    // Extrair apenas o nome do arquivo base (antes de qualquer / adicional)
+    // Ex: marcacoes.php/1 -> marcacoes.php
+    // Ex: marcacoes.php/1/toggle -> marcacoes.php
+    if (strpos($endpoint, '.php/') !== false) {
+        $endpoint = substr($endpoint, 0, strpos($endpoint, '.php/') + 4);
+    }
 } else {
     // Fallback: extrair do REQUEST_URI
     $base_path = '/api/';
@@ -19,6 +26,13 @@ if (isset($_GET['endpoint'])) {
         // Remover query string se existir
         if (strpos($endpoint, '?') !== false) {
             $endpoint = substr($endpoint, 0, strpos($endpoint, '?'));
+        }
+        
+        // Extrair apenas o nome do arquivo base (antes de qualquer / adicional)
+        // Ex: marcacoes.php/1 -> marcacoes.php
+        // Ex: marcacoes.php/1/toggle -> marcacoes.php
+        if (strpos($endpoint, '.php/') !== false) {
+            $endpoint = substr($endpoint, 0, strpos($endpoint, '.php/') + 4);
         }
     } else {
         http_response_code(404);

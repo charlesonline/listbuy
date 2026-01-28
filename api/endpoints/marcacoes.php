@@ -33,7 +33,10 @@ try {
     // Extrair parâmetros da URI
     $request_uri = $_SERVER['REQUEST_URI'];
     $path = parse_url($request_uri, PHP_URL_PATH);
-    $path = str_replace('/api/endpoints/marcacoes.php/', '', $path);
+    
+    // Remover o prefixo /api/marcacoes.php/ para pegar os parâmetros
+    $path = str_replace('/api/marcacoes.php/', '', $path);
+    
     $uri_parts = array_filter(explode('/', trim($path, '/')));
     $uri_parts = array_values($uri_parts); // Reindexar
     
@@ -79,16 +82,21 @@ try {
         $item_id = intval($data['item_id']);
         $marcar = isset($data['marcado']) ? (bool)$data['marcado'] : true;
         
-        $resultado = $sessaoCompra->toggleItem($lista_id, $item_id, $usuario_logado['id'], $marcar);
-        
-        if ($resultado) {
-            echo json_encode([
-                'success' => true,
-                'message' => $marcar ? 'Item marcado' : 'Item desmarcado'
-            ]);
-        } else {
+        try {
+            $resultado = $sessaoCompra->toggleItem($lista_id, $item_id, $usuario_logado['id'], $marcar);
+            
+            if ($resultado) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => $marcar ? 'Item marcado' : 'Item desmarcado'
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Erro ao marcar item']);
+            }
+        } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Erro ao marcar item']);
+            echo json_encode(['success' => false, 'message' => 'Erro: ' . $e->getMessage()]);
         }
         exit();
     }

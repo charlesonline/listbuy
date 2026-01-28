@@ -31,9 +31,15 @@ if ($metodo === 'POST') {
     }
 
     // Verificar captcha
-    if (!isset($dados['captcha']) || !isset($dados['captcha_resposta'])) {
+    /* if (!isset($dados['captcha']) || !isset($dados['captcha_resposta'])) {
         http_response_code(400);
-        echo json_encode(['erro' => 'Captcha é obrigatório']);
+        echo json_encode([
+            'erro' => 'Captcha é obrigatório',
+            'debug' => [
+                'captcha_presente' => isset($dados['captcha']),
+                'captcha_resposta_presente' => isset($dados['captcha_resposta'])
+            ]
+        ]);
         exit;
     }
 
@@ -70,7 +76,7 @@ if ($metodo === 'POST') {
         http_response_code(400);
         echo json_encode(['erro' => 'Captcha incorreto']);
         exit;
-    }
+    } */
 
     // Verificar credenciais
     $usuario = $usuarioModel->verificarCredenciais($dados['username'], $dados['senha']);
