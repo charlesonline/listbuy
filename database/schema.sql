@@ -114,9 +114,10 @@ CREATE TABLE IF NOT EXISTS sessoes_compra (
     FOREIGN KEY (lista_id) REFERENCES listas(id) ON DELETE CASCADE
 );
 
--- Índice único para garantir apenas uma sessão ativa por lista
-CREATE UNIQUE INDEX IF NOT EXISTS idx_sessao_ativa_unica 
-ON sessoes_compra(lista_id) WHERE ativa = 1;
+-- Índice para garantir apenas uma sessão ativa por lista
+-- Nota: A constraint UNIQUE será gerenciada pela aplicação
+CREATE INDEX IF NOT EXISTS idx_sessoes_compra_lista_ativa 
+ON sessoes_compra(lista_id, ativa);
 
 -- Tabela de Itens Marcados (controla quais itens foram marcados na sessão de compra)
 CREATE TABLE IF NOT EXISTS itens_marcados (

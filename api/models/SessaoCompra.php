@@ -18,7 +18,8 @@ class SessaoCompra {
         try {
             // Verificar se já existe sessão ativa
             $query = "SELECT * FROM " . $this->table_sessoes . " 
-                      WHERE lista_id = :lista_id AND ativa = 1";
+                      WHERE lista_id = :lista_id AND ativa = 1
+                      ORDER BY id DESC LIMIT 1";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':lista_id', $lista_id);
             $stmt->execute();
@@ -26,6 +27,14 @@ class SessaoCompra {
             $sessao = $stmt->fetch();
             
             if (!$sessao) {
+                // Desativar todas as sessões anteriores (garantia adicional)
+                $query = "UPDATE " . $this->table_sessoes . " 
+                          SET ativa = 0 
+                          WHERE lista_id = :lista_id AND ativa = 1";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindParam(':lista_id', $lista_id);
+                $stmt->execute();
+                
                 // Criar nova sessão
                 $query = "INSERT INTO " . $this->table_sessoes . " (lista_id) 
                           VALUES (:lista_id)";
