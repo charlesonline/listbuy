@@ -1282,12 +1282,19 @@ async function verificarAutenticacao() {
             mostrarApp();
             return true;
         } else {
+            // Token inválido ou expirado - fazer logout
             logout();
             return false;
         }
     } catch (error) {
         console.error('Erro ao verificar autenticação:', error);
-        logout();
+        // Em caso de erro de rede, tentar mostrar o app mesmo assim
+        // O token ainda está no localStorage e será validado na próxima chamada
+        if (State.token) {
+            mostrarApp();
+            return true;
+        }
+        mostrarLogin();
         return false;
     }
 }
