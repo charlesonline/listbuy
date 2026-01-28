@@ -1362,18 +1362,49 @@ select.form-control {
    RESPONSIVIDADE
    ======================================== */
 
-@media (max-width: 768px) {
-    .app-title {
-        font-size: 1.25rem;
-    }
-    
-    .header-actions {
-        flex-direction: column;
-        width: 100%;
+@media (max-width: 900px) {
+    .header-actions .btn span:not(.btn-icon):not(.badge-notificacao) {
+        display: none;
     }
     
     .header-actions .btn {
-        width: 100%;
+        padding: 12px;
+        min-width: 48px;
+        position: relative;
+    }
+    
+    .header-actions .btn::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: -35px;
+        left: 50%;
+        transform: translateX(-50%) scale(0.8);
+        background: var(--gray-900);
+        color: var(--white);
+        padding: 6px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: var(--transition-fast);
+        z-index: 1000;
+    }
+    
+    .header-actions .btn:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+    
+    .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-title {
+        font-size: 1.25rem;
     }
     
     .listas-grid {
