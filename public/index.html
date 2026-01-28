@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#FF6B9D">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>Lista de Compras</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Tela de Login -->
+    <section id="telaLogin" class="login-screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-icon">🛒</div>
+                    <h1>Lista de Compras</h1>
+                    <p>Faça login para continuar</p>
+                </div>
+                
+                <form id="formLogin" class="login-form">
+                    <div class="form-group">
+                        <label for="loginUsername">Usuário</label>
+                        <input type="text" id="loginUsername" name="username" class="form-control" required autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginSenha">Senha</label>
+                        <input type="password" id="loginSenha" name="senha" class="form-control" required autocomplete="current-password">
+                    </div>
+                    
+                    <div class="form-group captcha-group">
+                        <label for="loginCaptcha">Resolva: <span id="captchaTexto"></span></label>
+                        <input type="number" id="loginCaptcha" name="captcha" class="form-control" required autocomplete="off">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+                    
+                    <div id="loginErro" class="error-message" style="display: none;"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Header -->
+    <header class="app-header" style="display: none;">
+        <div class="header-content">
+            <h1 class="app-title" onclick="voltarParaListas()" style="cursor: pointer;">🛒 Minhas Listas</h1>
+            <div class="header-actions">
+                <button id="btnUsuarios" class="btn btn-secondary" style="display: none;">
+                    <span class="btn-icon">👥</span>
+                    <span>Usuários</span>
+                </button>
+                <button id="btnCategorias" class="btn btn-secondary">
+                    <span class="btn-icon">🏷️</span>
+                    <span>Categorias</span>
+                </button>
+                <button id="btnHistorico" class="btn btn-secondary">
+                    <span class="btn-icon">📊</span>
+                    <span>Histórico</span>
+                </button>
+                <button id="btnAbrirChatHeader" class="btn btn-secondary">
+                    <span class="btn-icon">💬</span>
+                    <span>Chat</span>
+                    <span id="badgeNovasMensagensHeader" class="badge-notificacao" style="display: none;">0</span>
+                </button>
+                <button id="btnNovaLista" class="btn btn-primary">
+                    <span class="btn-icon">+</span>
+                    <span>Nova Lista</span>
+                </button>
+                <button id="btnLogout" class="btn btn-secondary">
+                    <span class="btn-icon">🚪</span>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="app-main">
+        <!-- Tela de Listas -->
+        <section id="telaListas" class="screen active">
+            <div class="container">
+                <div id="listasContainer" class="listas-grid">
+                    <!-- Listas serão inseridas aqui via JavaScript -->
+                </div>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-icon">📋</div>
+                    <p>Nenhuma lista criada ainda</p>
+                    <p class="empty-subtitle">Crie sua primeira lista de compras!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela de Itens da Lista -->
+        <section id="telaItens" class="screen">
+            <div class="container">
+                <div class="screen-header">
+                    <button id="btnVoltarListas" class="btn btn-back">
+                        <span class="btn-icon">←</span>
+                    </button>
+                    <div class="screen-title">
+                        <h2 id="tituloLista">Minha Lista</h2>
+                        <p id="descricaoLista" class="subtitle"></p>
+                    </div>
+                    <button id="btnAdicionarItem" class="btn btn-icon-only">
+                        <span class="btn-icon">+</span>
+                    </button>
+                </div>
+
+                <!-- Filtros -->
+                <div class="historico-filters" style="margin-bottom: 20px;">
+                    <select id="filtroMarcacao" class="form-control">
+                        <option value="todos">Todos os itens</option>
+                        <option value="marcados">✓ Marcados</option>
+                        <option value="nao-marcados">○ Não marcados</option>
+                    </select>
+                    <select id="filtroCategoria" class="form-control">
+                        <option value="">Todas as categorias</option>
+                        <!-- Categorias serão carregadas dinamicamente -->
+                    </select>
+                </div>
+
+                <div id="itensContainer" class="itens-list">
+                    <!-- Itens serão inseridos aqui via JavaScript -->
+                </div>
+
+                <div id="emptyItens" class="empty-state" style="display: none;">
+                    <div class="empty-icon">🛍️</div>
+                    <p>Nenhum item na lista</p>
+                    <p class="empty-subtitle">Adicione itens para começar!</p>
+                </div>
+
+                <!-- Botão Finalizar Compra -->
+                <div id="finalizarCompraContainer" class="sticky-footer" style="display: none;">
+                    <div class="footer-summary">
+                        <div class="summary-info">
+                            <span class="summary-label">Total selecionado:</span>
+                            <span id="totalSelecionado" class="summary-value">R$ 0,00</span>
+                        </div>
+                        <div class="summary-items">
+                            <span id="qtdeSelecionada">0</span> item(ns)
+                        </div>
+                    </div>
+                    <button id="btnFinalizarCompra" class="btn btn-success btn-large">
+                        <span class="btn-icon">✓</span>
+                        <span>Finalizar Compra</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela de Histórico -->
+        <section id="telaHistorico" class="screen">
+            <div class="container">
+                <div class="screen-header">
+                    <button id="btnVoltarHistorico" class="btn btn-back">
+                        <span class="btn-icon">←</span>
+                    </button>
+                    <div class="screen-title">
+                        <h2>Histórico de Compras</h2>
+                        <p class="subtitle">Acompanhe suas compras e evolução de preços</p>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="historico-filters">
+                    <select id="filtroListaHistorico" class="form-control">
+                        <option value="">Todas as listas</option>
+                    </select>
+                    <select id="filtroPeriodo" class="form-control">
+                        <option value="7">Últimos 7 dias</option>
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="90">Últimos 90 dias</option>
+                        <option value="all" selected>Todo período</option>
+                    </select>
+                </div>
+
+                <!-- Estatísticas -->
+                <div id="estatisticas" class="stats-grid">
+                    <!-- Estatísticas serão inseridas aqui -->
+                </div>
+
+                <div id="historicoContainer" class="historico-list">
+                    <!-- Histórico será inserido aqui via JavaScript -->
+                </div>
+
+                <div id="emptyHistorico" class="empty-state" style="display: none;">
+                    <div class="empty-icon">📊</div>
+                    <p>Nenhuma compra registrada</p>
+                    <p class="empty-subtitle">Finalize suas compras para ver o histórico aqui</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela de Categorias -->
+        <section id="telaCategorias" class="screen">
+            <div class="container">
+                <div class="screen-header">
+                    <button id="btnVoltarCategorias" class="btn btn-back">
+                        <span class="btn-icon">←</span>
+                    </button>
+                    <div class="screen-title">
+                        <h2>Gerenciar Categorias</h2>
+                        <p class="subtitle">Personalize suas categorias com cores e ícones</p>
+                    </div>
+                    <button id="btnNovaCategoria" class="btn btn-primary">
+                        <span class="btn-icon">+</span>
+                    </button>
+                </div>
+
+                <div id="categoriasContainer" class="categorias-grid">
+                    <!-- Categorias serão inseridas aqui via JavaScript -->
+                </div>
+
+                <div id="emptyCategorias" class="empty-state" style="display: none;">
+                    <div class="empty-icon">🏷️</div>
+                    <p>Nenhuma categoria cadastrada</p>
+                    <p class="empty-subtitle">Crie categorias para organizar melhor seus itens</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela de Usuários (apenas para admins) -->
+        <section id="telaUsuarios" class="screen">
+            <div class="screen-header">
+                <button class="btn btn-back" onclick="voltarParaListas()">
+                    <span class="btn-icon">←</span>
+                </button>
+                <h2>Gerenciar Usuários</h2>
+                <button id="btnNovoUsuario" class="btn btn-primary">
+                    <span class="btn-icon">+</span>
+                    <span>Novo Usuário</span>
+                </button>
+            </div>
+            <div class="container">
+                <div id="usuariosContainer" class="usuarios-grid">
+                    <!-- Usuários serão inseridos aqui -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Nova Lista -->
+    <div id="modalNovaLista" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nova Lista</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalNovaLista">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="inputNomeLista">Nome da Lista</label>
+                    <input type="text" id="inputNomeLista" class="form-control" placeholder="Ex: Supermercado" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputDescricaoLista">Descrição (opcional)</label>
+                    <textarea id="inputDescricaoLista" class="form-control" rows="3" placeholder="Ex: Compras semanais"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('modalNovaLista')">Cancelar</button>
+                <button id="btnSalvarLista" class="btn btn-primary">Criar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Novo Item -->
+    <div id="modalNovoItem" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloModalItem">Novo Item</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalNovoItem">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editItemId">
+                <div class="form-group">
+                    <label for="inputNomeItem">Nome do Item</label>
+                    <input type="text" id="inputNomeItem" class="form-control" placeholder="Ex: Arroz" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputCategoriaItem">Categoria</label>
+                    <select id="inputCategoriaItem" class="form-control">
+                        <option value="">Selecione...</option>
+                        <!-- Categorias serão carregadas dinamicamente -->
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inputPrecoItem">Preço (R$)</label>
+                        <input type="number" id="inputPrecoItem" class="form-control" step="0.01" min="0" value="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="inputQuantidadeItem">Quantidade</label>
+                        <input type="number" id="inputQuantidadeItem" class="form-control" step="0.01" min="0.01" value="1">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('modalNovoItem')">Cancelar</button>
+                <button id="btnSalvarItem" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nova Categoria -->
+    <div id="modalNovaCategoria" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloModalCategoria">Nova Categoria</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalNovaCategoria">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCategoriaId">
+                <div class="form-group">
+                    <label for="inputNomeCategoria">Nome</label>
+                    <input type="text" id="inputNomeCategoria" class="form-control" placeholder="Ex: Frutas" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputCorCategoria">Cor</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="inputCorCategoria" class="color-picker" value="#8B5CF6">
+                        <input type="text" id="inputCorCategoriaText" class="form-control" value="#8B5CF6" maxlength="7">
+                    </div>
+                    <div class="color-presets">
+                        <button type="button" class="color-preset" data-color="#F59E0B" style="background: #F59E0B;"></button>
+                        <button type="button" class="color-preset" data-color="#FB923C" style="background: #FB923C;"></button>
+                        <button type="button" class="color-preset" data-color="#EF4444" style="background: #EF4444;"></button>
+                        <button type="button" class="color-preset" data-color="#EC4899" style="background: #EC4899;"></button>
+                        <button type="button" class="color-preset" data-color="#8B5CF6" style="background: #8B5CF6;"></button>
+                        <button type="button" class="color-preset" data-color="#3B82F6" style="background: #3B82F6;"></button>
+                        <button type="button" class="color-preset" data-color="#10B981" style="background: #10B981;"></button>
+                        <button type="button" class="color-preset" data-color="#F59E0B" style="background: #F59E0B;"></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inputIconeCategoria">Ícone (Emoji)</label>
+                    <input type="text" id="inputIconeCategoria" class="form-control" placeholder="📦" maxlength="10">
+                    <small class="form-hint">Copie e cole um emoji ou deixe em branco para usar o padrão</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('modalNovaCategoria')">Cancelar</button>
+                <button id="btnSalvarCategoria" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Novo Usuário -->
+    <div id="modalNovoUsuario" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloModalUsuario">Novo Usuário</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalNovoUsuario">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUsuarioId">
+                <div class="form-group">
+                    <label for="inputUsernameUsuario">Nome de Usuário</label>
+                    <input type="text" id="inputUsernameUsuario" class="form-control" placeholder="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputNomeUsuario">Nome Completo</label>
+                    <input type="text" id="inputNomeUsuario" class="form-control" placeholder="Nome completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputEmailUsuario">E-mail</label>
+                    <input type="email" id="inputEmailUsuario" class="form-control" placeholder="email@exemplo.com">
+                </div>
+                <div class="form-group">
+                    <label for="inputSenhaUsuario">Senha <span id="senhaOpcional" style="color: #999; font-weight: normal;">(deixe em branco para manter)</span></label>
+                    <input type="password" id="inputSenhaUsuario" class="form-control" placeholder="********">
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="inputAdminUsuario">
+                        Administrador
+                    </label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="inputAtivoUsuario" checked>
+                        Usuário Ativo
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('modalNovoUsuario')">Cancelar</button>
+                <button id="btnSalvarUsuario" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Compartilhar Lista -->
+    <div id="modalCompartilhar" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Compartilhar Lista</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalCompartilhar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="compartilharListaId">
+                
+                <div class="form-group">
+                    <label for="selectUsuarioCompartilhar">Selecione o usuário</label>
+                    <select id="selectUsuarioCompartilhar" class="form-control">
+                        <option value="">Escolha um usuário...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="checkPodeEditar" checked>
+                        Permitir editar itens
+                    </label>
+                </div>
+                
+                <button id="btnCompartilharLista" class="btn btn-primary btn-block">
+                    Compartilhar
+                </button>
+                
+                <div class="compartilhamentos-lista" style="margin-top: var(--spacing-lg);">
+                    <h4 style="font-size: 1rem; margin-bottom: var(--spacing);">Usuários com acesso:</h4>
+                    <div id="usuariosComAcesso" class="usuarios-compartilhados">
+                        <!-- Usuários compartilhados aqui -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('modalCompartilhar')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes da Compra -->
+    <div id="modalDetalhesCompra" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Detalhes da Compra</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalDetalhesCompra">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="detalhesCompraContent">
+                    <!-- Detalhes serão inseridos aqui -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('modalDetalhesCompra')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Flutuante -->
+    <div id="chatWidget" class="chat-widget" style="display: none;">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <span class="chat-icon">💬</span>
+                <span class="chat-title">Chat do Grupo</span>
+                <span id="chatOnlineCount" class="chat-online">0 online</span>
+            </div>
+            <div class="chat-header-actions">
+                <button id="btnMinimizarChat" class="btn-icon-only" title="Minimizar">
+                    <span>−</span>
+                </button>
+                <button id="btnFecharChat" class="btn-icon-only" title="Fechar">
+                    <span>×</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="chat-body">
+            <div id="chatMensagens" class="chat-mensagens">
+                <!-- Mensagens serão inseridas aqui -->
+            </div>
+        </div>
+        
+        <div class="chat-footer">
+            <form id="formChat" class="chat-form">
+                <input type="text" id="inputMensagem" class="chat-input" placeholder="Digite sua mensagem..." autocomplete="off" maxlength="500">
+                <button type="submit" class="btn-enviar">
+                    <span>📤</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Botão Flutuante do Chat - Removido (agora no header) -->
+
+    <!-- Toast de Notificação -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

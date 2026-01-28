@@ -1,0 +1,22 @@
+# Ignore database file (will be created automatically)
+database/lista_compras.db
+database/*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+cache/

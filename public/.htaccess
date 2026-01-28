@@ -1,0 +1,56 @@
+# .htaccess para App Lista de Compras
+
+# Habilitar RewriteEngine
+RewriteEngine On
+
+# Redirecionar requisições de API para os endpoints corretos
+# Evitar loop: não redirecionar se já estiver em /api/endpoints/
+RewriteCond %{REQUEST_URI} !^/api/endpoints/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/(.+)$ /api/endpoints/$1 [L,QSA]
+
+# Configurações de segurança
+<IfModule mod_headers.c>
+    # Habilitar CORS para desenvolvimento
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type"
+    
+    # Segurança adicional
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Configurações de cache
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Imagens
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    
+    # CSS e JavaScript
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    
+    # HTML
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# Compressão Gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Proteger arquivos sensíveis
+<FilesMatch "\.(db|sqlite|sql|log)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Página de erro customizada (opcional)
+# ErrorDocument 404 /404.html
+# ErrorDocument 500 /500.html
