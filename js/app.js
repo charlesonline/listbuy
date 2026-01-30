@@ -188,6 +188,91 @@ function changeScreen(screenId) {
 }
 
 // ========================================
+// FUNÇÕES DE PWA - DETECÇÃO E INSTALAÇÃO
+// ========================================
+
+let deferredPrompt;
+let isPWAInstalled = false;
+
+// Detectar se o app já está instalado
+function verificarPWAInstalada() {
+    // Verificar se está em modo standalone
+    if (window.navigator.standalone === true) {
+        return true;
+    }
+    
+    // Verificar display-mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        return true;
+    }
+    
+    // Verificar se está em modo fullscreen
+    if (window.matchMedia('(display-mode: fullscreen)').matches) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Capturar evento beforeinstallprompt
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    isPWAInstalled = false;
+    
+    // Mostrar modal de instalação
+    mostrarModalInstalacao();
+});
+
+// Detectar quando app foi instalado
+window.addEventListener('appinstalled', () => {
+    console.log('✅ PWA instalada com sucesso!');
+    hideModal('modalInstalarPWA');
+    showToast('✅ App instalado com sucesso!', 'success');
+    isPWAInstalled = true;
+    deferredPrompt = null;
+});
+
+// Mostrar modal de instalação
+function mostrarModalInstalacao() {
+    // Verificar se já está instalado
+    if (verificarPWAInstalada()) {
+        isPWAInstalled = true;
+        return;
+    }
+    
+    // Mostrar apenas se houver suporte
+    if (!deferredPrompt) {
+        return;
+    }
+    
+    // Mostrar modal após 2 segundos
+    setTimeout(() => {
+        showModal('modalInstalarPWA');
+    }, 2000);
+}
+
+// Função para instalar a PWA
+async function instalarPWA() {
+    if (!deferredPrompt) {
+        showToast('Instalação não disponível neste navegador', 'error');
+        return;
+    }
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+        console.log('👍 App instalado pelo usuário');
+        hideModal('modalInstalarPWA');
+    } else {
+        console.log('👎 Instalação cancelada');
+    }
+    
+    deferredPrompt = null;
+}
+
+// ========================================
 // API CALLS
 // ========================================
 
@@ -1300,6 +1385,12 @@ function renderizarDetalhesCompra(compra, evolucaoPrecos) {
 // ========================================
 
 function inicializarEventListeners() {
+    // PWA - Instalar
+    const btnInstalarPWA = $('#btnInstalarPWA');
+    if (btnInstalarPWA) {
+        btnInstalarPWA.addEventListener('click', instalarPWA);
+    }
+    
     // Login
     $('#formLogin').addEventListener('submit', fazerLogin);
     
@@ -2457,6 +2548,10 @@ function mostrarNotificacaoChat(msg) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     inicializarEventListeners();
+    
+    // Verificar PWA
+    verificarPWAInstalada();
+    mostrarModalInstalacao();
     
     // Verificar autenticação antes de carregar dados
     const autenticado = await verificarAutenticacao();

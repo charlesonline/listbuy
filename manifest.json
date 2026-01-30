@@ -1,0 +1,17 @@
+{
+    "name": "listbuy",
+    "short_name": "List Buy",
+    "icons": [
+        {
+            "src": "./img/icon/icon2.png",
+            "sizes": "144x144",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#FF6B9D",
+    "background_color": "#FF6B9D",
+    "display": "fullscreen",
+    "orientation": "portrait",
+    "scope": "/",
+    "start_url": "https://listbuy.easy-tecno.com.br/"
+}

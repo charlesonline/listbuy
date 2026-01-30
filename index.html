@@ -10,6 +10,7 @@
     
     <title>Lista de Compras</title>
     
+    <link rel="manifest" href="./manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -549,6 +550,28 @@
         </div>
     </div>
 
+    <!-- Modal Instalar PWA -->
+    <div id="modalInstalarPWA" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📱 Instalar App</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalInstalarPWA">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px 0;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🛒</div>
+                    <p style="font-size: 14px; color: #666; margin: 10px 0;">
+                        Instale o app na sua tela inicial para acesso rápido e melhor experiência!
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('modalInstalarPWA')">Agora não</button>
+                <button id="btnInstalarPWA" class="btn btn-primary">Instalar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Botão Flutuante do Chat - Removido (agora no header) -->
 
     <!-- Toast de Notificação -->
@@ -560,5 +583,7 @@
     </div>
 
     <script src="js/app.js?v=3"></script>
+    <script src="./pwa.dev.min.js" type="text/javascript"></script>
+    <script type="text/javascript"> if (navigator.serviceWorker) { navigator.serviceWorker.register ('./sw.js'); } </script>
 </body>
 </html>
