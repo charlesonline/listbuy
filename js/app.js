@@ -54,6 +54,73 @@ function formatarData(dataString) {
     }).format(data);
 }
 
+// Função para aplicar máscara de moeda (Real Brasileiro)
+function aplicarMascaraMoeda(valor) {
+    // Remove tudo exceto números
+    let numero = valor.replace(/\D/g, '');
+    
+    // Se vazio, retorna valor padrão
+    if (numero === '' || numero === '0') {
+        return 'R$ 0,00';
+    }
+    
+    // Converte para número com centavos
+    numero = parseInt(numero, 10);
+    
+    // Formata para moeda brasileira
+    const valorFormatado = (numero / 100).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    return `R$ ${valorFormatado}`;
+}
+
+// Função para aplicar máscara numérica (quantidade)
+function aplicarMascaraNumerica(valor) {
+    // Remove tudo exceto números e vírgula/ponto
+    let numero = valor.replace(/[^\d,]/g, '');
+    
+    // Se vazio, retorna 1
+    if (numero === '') {
+        return '1';
+    }
+    
+    // Substitui vírgula por ponto para conversão
+    numero = numero.replace(',', '.');
+    
+    // Limita a 2 casas decimais
+    const partes = numero.split('.');
+    if (partes.length > 2) {
+        numero = partes[0] + '.' + partes.slice(1).join('');
+    }
+    
+    if (partes[1] && partes[1].length > 2) {
+        numero = partes[0] + '.' + partes[1].substring(0, 2);
+    }
+    
+    return numero.replace('.', ',');
+}
+
+// Função para extrair valor numérico do campo com máscara de moeda
+function extrairValorMoeda(valorComMascara) {
+    // Remove 'R$', espaços, pontos de milhar e substitui vírgula por ponto
+    const numero = valorComMascara
+        .replace('R$', '')
+        .replace(/\s/g, '')
+        .replace(/\./g, '')
+        .replace(',', '.');
+    
+    return parseFloat(numero) || 0;
+}
+
+// Função para extrair valor numérico do campo com máscara numérica
+function extrairValorNumerico(valorComMascara) {
+    // Substitui vírgula por ponto
+    const numero = valorComMascara.replace(',', '.');
+    return parseFloat(numero) || 1;
+}
+
 function showToast(message, type = 'success') {
     const toast = $('#toast');
     toast.textContent = message;
@@ -555,8 +622,13 @@ function abrirModalEditarMarcado(itemId) {
     
     $('#itemMarcadoId').value = itemId;
     $('#tituloModalMarcado').textContent = item.nome;
-    $('#inputPrecoMarcado').value = parseFloat(item.preco).toFixed(2);
-    $('#inputQuantidadeMarcado').value = parseFloat(item.quantidade).toFixed(2);
+    
+    // Formata os valores com as máscaras
+    const precoFormatado = aplicarMascaraMoeda((parseFloat(item.preco) * 100).toString());
+    $('#inputPrecoMarcado').value = precoFormatado;
+    
+    const quantidadeFormatada = parseFloat(item.quantidade).toFixed(2).replace('.', ',');
+    $('#inputQuantidadeMarcado').value = quantidadeFormatada;
     
     showModal('modalEditarMarcado');
     
@@ -569,8 +641,8 @@ function abrirModalEditarMarcado(itemId) {
 
 async function salvarItemMarcado() {
     const itemId = parseInt($('#itemMarcadoId').value);
-    const preco = parseFloat($('#inputPrecoMarcado').value) || 0;
-    const quantidade = parseFloat($('#inputQuantidadeMarcado').value) || 1;
+    const preco = extrairValorMoeda($('#inputPrecoMarcado').value);
+    const quantidade = extrairValorNumerico($('#inputQuantidadeMarcado').value);
     
     if (quantidade <= 0) {
         showToast('A quantidade deve ser maior que zero', 'error');
@@ -779,8 +851,12 @@ async function editarItem(itemId) {
     await carregarCategoriasNoSelect();
     $('#inputCategoriaItem').value = item.categoria_id || '';
     
-    $('#inputPrecoItem').value = item.preco;
-    $('#inputQuantidadeItem').value = item.quantidade;
+    // Formata os valores com as máscaras
+    const precoFormatado = aplicarMascaraMoeda((parseFloat(item.preco) * 100).toString());
+    $('#inputPrecoItem').value = precoFormatado;
+    
+    const quantidadeFormatada = parseFloat(item.quantidade).toFixed(2).replace('.', ',');
+    $('#inputQuantidadeItem').value = quantidadeFormatada;
     
     showModal('modalNovoItem');
 }
@@ -791,7 +867,7 @@ function limparFormularioItem() {
     $('#editItemId').value = '';
     $('#inputNomeItem').value = '';
     $('#inputCategoriaItem').value = '';
-    $('#inputPrecoItem').value = '0.00';
+    $('#inputPrecoItem').value = 'R$ 0,00';
     $('#inputQuantidadeItem').value = '1';
 }
 
@@ -1193,8 +1269,8 @@ function inicializarEventListeners() {
     $('#btnSalvarItem').addEventListener('click', () => {
         const nome = $('#inputNomeItem').value.trim();
         const categoria_id = $('#inputCategoriaItem').value || null;
-        const preco = parseFloat($('#inputPrecoItem').value) || 0;
-        const quantidade = parseFloat($('#inputQuantidadeItem').value) || 1;
+        const preco = extrairValorMoeda($('#inputPrecoItem').value);
+        const quantidade = extrairValorNumerico($('#inputQuantidadeItem').value);
         const ordem = State.itensAtual.length;
         
         if (!nome) {
@@ -1329,6 +1405,42 @@ function inicializarEventListeners() {
             e.preventDefault();
             $('#btnSalvarMarcado').click();
         }
+    });
+    
+    // Aplicar máscaras de moeda e numéricas
+    aplicarMascarasCampos();
+}
+
+// Função para aplicar máscaras aos campos de moeda e numéricos
+function aplicarMascarasCampos() {
+    // Campos de moeda
+    const camposMoeda = document.querySelectorAll('.money-input');
+    camposMoeda.forEach(campo => {
+        // Ao digitar
+        campo.addEventListener('input', (e) => {
+            const valor = e.target.value;
+            e.target.value = aplicarMascaraMoeda(valor);
+        });
+        
+        // Ao focar, seleciona o texto
+        campo.addEventListener('focus', (e) => {
+            setTimeout(() => e.target.select(), 0);
+        });
+    });
+    
+    // Campos numéricos
+    const camposNumericos = document.querySelectorAll('.numeric-input');
+    camposNumericos.forEach(campo => {
+        // Ao digitar
+        campo.addEventListener('input', (e) => {
+            const valor = e.target.value;
+            e.target.value = aplicarMascaraNumerica(valor);
+        });
+        
+        // Ao focar, seleciona o texto
+        campo.addEventListener('focus', (e) => {
+            setTimeout(() => e.target.select(), 0);
+        });
     });
 }
 
