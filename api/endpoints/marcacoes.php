@@ -36,6 +36,7 @@ try {
     
     // Remover o prefixo /api/marcacoes.php/ para pegar os parâmetros
     $path = str_replace('/api/marcacoes.php/', '', $path);
+    $path = str_replace('/api/marcacoes.php', '', $path);
     
     $uri_parts = array_filter(explode('/', trim($path, '/')));
     $uri_parts = array_values($uri_parts); // Reindexar
@@ -112,13 +113,23 @@ try {
             exit();
         }
         
-        $resultado = $sessaoCompra->finalizarCompra($lista_id, $usuario_logado['id']);
-        
-        if ($resultado['success']) {
-            echo json_encode($resultado);
-        } else {
-            http_response_code(400);
-            echo json_encode($resultado);
+        try {
+            $resultado = $sessaoCompra->finalizarCompra($lista_id, $usuario_logado['id']);
+            
+            if ($resultado['success']) {
+                http_response_code(200);
+                echo json_encode($resultado);
+            } else {
+                http_response_code(400);
+                echo json_encode($resultado);
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Erro ao finalizar compra',
+                'error' => $e->getMessage()
+            ]);
         }
         exit();
     }

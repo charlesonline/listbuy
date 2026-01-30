@@ -459,6 +459,33 @@
         </div>
     </div>
 
+    <!-- Modal Editar Item Marcado -->
+    <div id="modalEditarMarcado" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloModalMarcado">Editar Item</h3>
+                <button class="modal-close modal-close-icon" data-modal="modalEditarMarcado">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="itemMarcadoId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inputPrecoMarcado">Preço (R$)</label>
+                        <input type="number" id="inputPrecoMarcado" class="form-control" step="0.01" min="0" value="0.00" autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputQuantidadeMarcado">Quantidade</label>
+                        <input type="number" id="inputQuantidadeMarcado" class="form-control" step="0.01" min="0.01" value="1">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cancelarEdicaoMarcado()">Cancelar</button>
+                <button id="btnSalvarMarcado" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Chat Flutuante -->
     <div id="chatWidget" class="chat-widget" style="display: none;">
         <div class="chat-header">

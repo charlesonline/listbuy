@@ -517,6 +517,14 @@ async function toggleItemMarcado(itemId) {
         const marcado = State.itensMarcados[itemId]?.marcado || false;
         const novoEstado = !marcado;
         
+        // Se estiver marcando (indo de desmarcado para marcado)
+        if (novoEstado) {
+            // Abrir modal para editar preço e quantidade
+            abrirModalEditarMarcado(itemId);
+            return;
+        }
+        
+        // Se estiver desmarcando
         // Atualizar no servidor
         const result = await apiCall(
             `marcacoes.php/${State.listaAtual.id}/toggle`, 
@@ -526,21 +534,12 @@ async function toggleItemMarcado(itemId) {
         
         if (result.success) {
             // Atualizar estado local imediatamente
-            if (novoEstado) {
-                State.itensMarcados[itemId] = {
-                    marcado: true,
-                    marcado_por_nome: State.usuario.nome,
-                    marcado_por_username: State.usuario.username,
-                    marcado_em: new Date().toISOString()
-                };
-            } else {
-                State.itensMarcados[itemId] = {
-                    marcado: false,
-                    marcado_por_nome: null,
-                    marcado_por_username: null,
-                    marcado_em: null
-                };
-            }
+            State.itensMarcados[itemId] = {
+                marcado: false,
+                marcado_por_nome: null,
+                marcado_por_username: null,
+                marcado_em: null
+            };
             
             renderizarItens();
         }
@@ -548,6 +547,76 @@ async function toggleItemMarcado(itemId) {
         console.error('Erro ao marcar item:', error);
         showToast('Erro ao marcar item', 'error');
     }
+}
+
+function abrirModalEditarMarcado(itemId) {
+    const item = State.itensAtual.find(i => i.id === itemId);
+    if (!item) return;
+    
+    $('#itemMarcadoId').value = itemId;
+    $('#tituloModalMarcado').textContent = item.nome;
+    $('#inputPrecoMarcado').value = parseFloat(item.preco).toFixed(2);
+    $('#inputQuantidadeMarcado').value = parseFloat(item.quantidade).toFixed(2);
+    
+    showModal('modalEditarMarcado');
+    
+    // Focar no campo de preço após abrir o modal
+    setTimeout(() => {
+        $('#inputPrecoMarcado').focus();
+        $('#inputPrecoMarcado').select();
+    }, 100);
+}
+
+async function salvarItemMarcado() {
+    const itemId = parseInt($('#itemMarcadoId').value);
+    const preco = parseFloat($('#inputPrecoMarcado').value) || 0;
+    const quantidade = parseFloat($('#inputQuantidadeMarcado').value) || 1;
+    
+    if (quantidade <= 0) {
+        showToast('A quantidade deve ser maior que zero', 'error');
+        return;
+    }
+    
+    showLoading();
+    try {
+        // Atualizar preço e quantidade do item
+        await apiCall(`itens.php?id=${itemId}`, 'PUT', {
+            preco: preco,
+            quantidade: quantidade
+        });
+        
+        // Marcar o item
+        const result = await apiCall(
+            `marcacoes.php/${State.listaAtual.id}/toggle`, 
+            'POST', 
+            { item_id: itemId, marcado: true }
+        );
+        
+        if (result.success) {
+            // Atualizar estado local
+            State.itensMarcados[itemId] = {
+                marcado: true,
+                marcado_por_nome: State.usuario.nome,
+                marcado_por_username: State.usuario.username,
+                marcado_em: new Date().toISOString()
+            };
+            
+            showToast('Item marcado e atualizado!');
+            hideModal('modalEditarMarcado');
+            
+            // Recarregar a lista completa para garantir dados atualizados
+            await abrirLista(State.listaAtual.id);
+        }
+    } catch (error) {
+        console.error('Erro ao salvar item marcado:', error);
+        showToast('Erro ao salvar item', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function cancelarEdicaoMarcado() {
+    hideModal('modalEditarMarcado');
 }
 
 async function carregarMarcacoes(listaId) {
@@ -1142,6 +1211,9 @@ function inicializarEventListeners() {
         }
     });
     
+    // Salvar Item Marcado
+    $('#btnSalvarMarcado').addEventListener('click', salvarItemMarcado);
+    
     // Finalizar Compra
     $('#btnFinalizarCompra').addEventListener('click', finalizarCompra);
     
@@ -1243,6 +1315,20 @@ function inicializarEventListeners() {
     
     $('#inputNomeItem').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') $('#btnSalvarItem').click();
+    });
+    
+    $('#inputPrecoMarcado').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#inputQuantidadeMarcado').focus();
+        }
+    });
+    
+    $('#inputQuantidadeMarcado').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnSalvarMarcado').click();
+        }
     });
 }
 

@@ -91,13 +91,14 @@ try {
             }
 
             $id = $_GET['id'];
-            $dados = [
-                'nome' => $input['nome'] ?? '',
-                'categoria_id' => $input['categoria_id'] ?? null,
-                'preco' => $input['preco'] ?? 0.00,
-                'quantidade' => $input['quantidade'] ?? 1.00,
-                'ordem' => $input['ordem'] ?? 0
-            ];
+            $dados = [];
+            
+            // Apenas incluir campos que foram enviados
+            if (isset($input['nome'])) $dados['nome'] = $input['nome'];
+            if (isset($input['categoria_id'])) $dados['categoria_id'] = $input['categoria_id'];
+            if (isset($input['preco'])) $dados['preco'] = $input['preco'];
+            if (isset($input['quantidade'])) $dados['quantidade'] = $input['quantidade'];
+            if (isset($input['ordem'])) $dados['ordem'] = $input['ordem'];
 
             if ($item->atualizar($id, $dados)) {
                 echo json_encode(['success' => true, 'message' => 'Item atualizado com sucesso']);

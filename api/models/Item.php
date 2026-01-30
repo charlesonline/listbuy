@@ -38,6 +38,11 @@ class Item {
 
     // Criar novo item
     public function criar($dados) {
+        // Validação e valores padrão
+        if (empty($dados['nome'])) {
+            throw new Exception('Nome do item é obrigatório');
+        }
+        
         $query = "INSERT INTO " . $this->table . " 
                   (lista_id, nome, categoria_id, preco, quantidade, ordem) 
                   VALUES (:lista_id, :nome, :categoria_id, :preco, :quantidade, :ordem)";
@@ -45,13 +50,16 @@ class Item {
         $stmt = $this->conn->prepare($query);
         
         $categoria_id = !empty($dados['categoria_id']) ? $dados['categoria_id'] : null;
+        $preco = isset($dados['preco']) ? $dados['preco'] : 0.00;
+        $quantidade = isset($dados['quantidade']) ? $dados['quantidade'] : 1.00;
+        $ordem = isset($dados['ordem']) ? $dados['ordem'] : 0;
         
         $stmt->bindParam(':lista_id', $dados['lista_id']);
         $stmt->bindParam(':nome', $dados['nome']);
         $stmt->bindParam(':categoria_id', $categoria_id);
-        $stmt->bindParam(':preco', $dados['preco']);
-        $stmt->bindParam(':quantidade', $dados['quantidade']);
-        $stmt->bindParam(':ordem', $dados['ordem']);
+        $stmt->bindParam(':preco', $preco);
+        $stmt->bindParam(':quantidade', $quantidade);
+        $stmt->bindParam(':ordem', $ordem);
         
         if ($stmt->execute()) {
             return $this->conn->lastInsertId();
@@ -61,20 +69,39 @@ class Item {
 
     // Atualizar item
     public function atualizar($id, $dados) {
+        // Buscar item atual para preservar valores não enviados
+        $itemAtual = $this->buscarPorId($id);
+        if (!$itemAtual) {
+            throw new Exception('Item não encontrado');
+        }
+        
+        // Usar valores enviados ou manter os atuais
+        $nome = isset($dados['nome']) ? $dados['nome'] : $itemAtual['nome'];
+        $categoria_id = isset($dados['categoria_id']) ? 
+                        (!empty($dados['categoria_id']) ? $dados['categoria_id'] : null) : 
+                        $itemAtual['categoria_id'];
+        $preco = isset($dados['preco']) ? $dados['preco'] : $itemAtual['preco'];
+        $quantidade = isset($dados['quantidade']) ? $dados['quantidade'] : $itemAtual['quantidade'];
+        $ordem = isset($dados['ordem']) ? $dados['ordem'] : $itemAtual['ordem'];
+        
+        // Validação
+        if (empty($nome)) {
+            throw new Exception('Nome do item é obrigatório');
+        }
+        
         $query = "UPDATE " . $this->table . " 
                   SET nome = :nome, categoria_id = :categoria_id, preco = :preco, 
                       quantidade = :quantidade, ordem = :ordem 
                   WHERE id = :id";
         
         $stmt = $this->conn->prepare($query);
-        $categoria_id = !empty($dados['categoria_id']) ? $dados['categoria_id'] : null;
         
         $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':nome', $dados['nome']);
+        $stmt->bindParam(':nome', $nome);
         $stmt->bindParam(':categoria_id', $categoria_id);
-        $stmt->bindParam(':preco', $dados['preco']);
-        $stmt->bindParam(':quantidade', $dados['quantidade']);
-        $stmt->bindParam(':ordem', $dados['ordem']);
+        $stmt->bindParam(':preco', $preco);
+        $stmt->bindParam(':quantidade', $quantidade);
+        $stmt->bindParam(':ordem', $ordem);
         
         return $stmt->execute();
     }
