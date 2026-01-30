@@ -30,6 +30,39 @@ const State = {
 };
 
 // ========================================
+// FUNÇÕES DE ORDENAÇÃO
+// ========================================
+
+function ordenarItens(itens, itensMarcados) {
+    // Separar itens marcados de não marcados
+    const itensNaoMarcados = itens.filter(item => !itensMarcados[item.id]?.marcado);
+    const itensMarcadosArray = itens.filter(item => itensMarcados[item.id]?.marcado);
+    
+    // Função de ordenação por categoria e nome
+    const ordenar = (a, b) => {
+        // Primeiro ordena por categoria
+        const categoriaNomeA = a.categoria_nome || 'ZZZ';
+        const categoriaNomeB = b.categoria_nome || 'ZZZ';
+        
+        const compCategoria = categoriaNomeA.localeCompare(categoriaNomeB, 'pt-BR', { sensitivity: 'base' });
+        
+        if (compCategoria !== 0) {
+            return compCategoria;
+        }
+        
+        // Se mesma categoria, ordena por nome
+        return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    };
+    
+    // Ordenar cada grupo
+    itensNaoMarcados.sort(ordenar);
+    itensMarcadosArray.sort(ordenar);
+    
+    // Combinar com não marcados primeiro, marcados ao final
+    return [...itensNaoMarcados, ...itensMarcadosArray];
+}
+
+// ========================================
 // UTILITÁRIOS
 // ========================================
 
@@ -520,6 +553,9 @@ async function abrirLista(listaId) {
         // Carregar marcações persistidas
         await carregarMarcacoes(listaId);
         
+        // Ordenar itens por categoria e nome, com não marcados no topo
+        State.itensAtual = ordenarItens(State.itensAtual, State.itensMarcados);
+        
         // Carregar categorias no filtro
         await carregarCategoriasNoFiltro();
         
@@ -542,6 +578,9 @@ function renderizarItens() {
     const container = $('#itensContainer');
     const emptyState = $('#emptyItens');
     
+    // Guardar posição do scroll atual
+    const scrollPosition = container.scrollTop;
+    
     if (!State.itensAtual || State.itensAtual.length === 0) {
         container.innerHTML = '';
         emptyState.style.display = 'block';
@@ -550,7 +589,7 @@ function renderizarItens() {
     }
     
     // Aplicar filtros
-    const itensFiltrados = State.itensAtual.filter(item => {
+    let itensFiltrados = State.itensAtual.filter(item => {
         // Filtro por marcação
         const marcado = State.itensMarcados[item.id]?.marcado || false;
         if (State.filtroMarcacao === 'marcados' && !marcado) return false;
@@ -572,7 +611,10 @@ function renderizarItens() {
     
     emptyState.style.display = 'none';
     
-    container.innerHTML = itensFiltrados.map(item => {
+    // Ordenar itens por categoria e nome, com não marcados no topo
+    const itensOrdenados = ordenarItens(itensFiltrados, State.itensMarcados);
+    
+    container.innerHTML = itensOrdenados.map(item => {
         const categoriaNome = item.categoria_nome || 'Sem categoria';
         const categoriaCor = item.categoria_cor || '#9CA3AF';
         const categoriaIcone = item.categoria_icone || '📦';
@@ -618,12 +660,15 @@ function renderizarItens() {
         });
     });
     
-    $$('.btn-delete').forEach(btn => {
+    $$('.item-delete').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             deletarItem(parseInt(btn.dataset.id));
         });
     });
+    
+    // Restaurar a posição do scroll
+    container.scrollTop = scrollPosition;
     
     atualizarResumoCompra();
 }
