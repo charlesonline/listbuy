@@ -523,6 +523,9 @@ async function abrirLista(listaId) {
         // Carregar categorias no filtro
         await carregarCategoriasNoFiltro();
         
+        // Atualizar contador de usuários online no chat
+        atualizarUsuariosOnline();
+        
         // Iniciar polling para sincronização
         iniciarPolling(listaId);
         
@@ -1673,6 +1676,9 @@ async function logout() {
     } catch (error) {
         console.error('Erro ao fazer logout:', error);
     } finally {
+        // Parar todos os pollings do chat
+        pararTodoPollingChat();
+        
         State.token = null;
         State.usuario = null;
         localStorage.removeItem('auth_token');
@@ -2084,17 +2090,49 @@ const Chat = {
     chatAberto: false,
     chatMinimizado: false,
     novasMensagens: 0,
-    polling: null
+    polling: null,
+    pollingUsuarios: null,
+    pollingNotificacoes: null // Polling leve para notificações em background
 };
 
 function iniciarChat() {
     if (!State.usuario) return;
     
-    // Carregar histórico
+    // Carregar histórico inicial
     carregarHistoricoChat();
+    
+    // Iniciar polling leve para notificações (sempre ativo, a cada 5 segundos)
+    Chat.pollingNotificacoes = setInterval(verificarNovasMensagensParaNotificacao, 5000);
+}
+
+function iniciarPollingChat() {
+    // Parar polling anterior se existir
+    pararPollingChat();
     
     // Iniciar polling a cada 2 segundos
     Chat.polling = setInterval(verificarNovasMensagens, 2000);
+    
+    // Atualizar usuários online a cada 10 segundos
+    Chat.pollingUsuarios = setInterval(atualizarUsuariosOnline, 10000);
+}
+
+function pararPollingChat() {
+    if (Chat.polling) {
+        clearInterval(Chat.polling);
+        Chat.polling = null;
+    }
+    if (Chat.pollingUsuarios) {
+        clearInterval(Chat.pollingUsuarios);
+        Chat.pollingUsuarios = null;
+    }
+}
+
+function pararTodoPollingChat() {
+    pararPollingChat();
+    if (Chat.pollingNotificacoes) {
+        clearInterval(Chat.pollingNotificacoes);
+        Chat.pollingNotificacoes = null;
+    }
 }
 
 async function carregarHistoricoChat() {
@@ -2113,13 +2151,59 @@ async function carregarHistoricoChat() {
                 Chat.ultimoId = Chat.mensagens[Chat.mensagens.length - 1].id;
             }
             renderizarMensagens();
+            atualizarUsuariosOnline();
         }
     } catch (error) {
         console.error('Erro ao carregar histórico:', error);
     }
 }
 
+async function verificarNovasMensagensParaNotificacao() {
+    if (!State.usuario || !State.token) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/mensagens.php?ultimo_id=${Chat.ultimoId}`, {
+            headers: {
+                'Authorization': `Bearer ${State.token}`
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+            result.data.forEach(msg => {
+                Chat.mensagens.push(msg);
+                Chat.ultimoId = msg.id;
+                
+                // Incrementar contador se chat estiver minimizado ou fechado
+                if (!Chat.chatAberto || Chat.chatMinimizado) {
+                    Chat.novasMensagens++;
+                }
+            });
+            
+            atualizarBadgeNotificacoes();
+            
+            // Se o chat estiver aberto, renderizar mensagens
+            if (Chat.chatAberto && !Chat.chatMinimizado) {
+                renderizarMensagens();
+                atualizarUsuariosOnline();
+            }
+            
+            // Mostrar notificação se chat não estiver visível
+            if (!Chat.chatAberto || Chat.chatMinimizado) {
+                const ultimaMsg = result.data[result.data.length - 1];
+                if (ultimaMsg.usuario_id !== State.usuario.id) {
+                    mostrarNotificacaoChat(ultimaMsg);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao verificar mensagens:', error);
+    }
+}
+
 async function verificarNovasMensagens() {
+    // Função completa usada quando chat está aberto (mais rápida, 2s)
     if (!State.usuario || !State.token) return;
     
     try {
@@ -2144,6 +2228,7 @@ async function verificarNovasMensagens() {
             
             renderizarMensagens();
             atualizarBadgeNotificacoes();
+            atualizarUsuariosOnline();
             
             // Mostrar notificação se chat não estiver visível
             if (!Chat.chatAberto || Chat.chatMinimizado) {
@@ -2179,8 +2264,22 @@ function renderizarMensagens() {
         `;
     }).join('');
     
-    // Scroll para o final
-    container.scrollTop = container.scrollHeight;
+    // Scroll para o final usando requestAnimationFrame para garantir renderização
+    scrollChatParaFinal();
+}
+
+function scrollChatParaFinal() {
+    const container = $('#chatMensagens');
+    if (!container) return;
+    
+    requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+        // Alternativa: pegar última mensagem e fazer scroll até ela
+        const ultimaMensagem = container.lastElementChild;
+        if (ultimaMensagem) {
+            ultimaMensagem.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    });
 }
 
 function escapeHtml(text) {
@@ -2197,18 +2296,25 @@ function abrirChat() {
     $('#chatWidget').style.display = 'flex';
     $('#chatWidget').classList.remove('minimizado');
     
-    atualizarBadgeNotificacoes();
+    // Iniciar polling quando abrir o chat
+    iniciarPollingChat();
     
-    // Focar no input
+    atualizarBadgeNotificacoes();
+    atualizarUsuariosOnline();
+    
+    // Focar no input e rolar para o final
     setTimeout(() => {
         $('#inputMensagem').focus();
-        $('#chatMensagens').scrollTop = $('#chatMensagens').scrollHeight;
+        scrollChatParaFinal();
     }, 100);
 }
 
 function fecharChat() {
     Chat.chatAberto = false;
     Chat.chatMinimizado = false;
+    
+    // Parar polling quando fechar o chat
+    pararPollingChat();
     
     $('#chatWidget').style.display = 'none';
 }
@@ -2235,6 +2341,26 @@ function atualizarBadgeNotificacoes() {
     } else {
         badge.style.display = 'none';
     }
+}
+
+async function atualizarUsuariosOnline() {
+    const countElement = $('#chatOnlineCount');
+    if (!countElement) return;
+    
+    // Contar usuários únicos que aparecem nas mensagens do chat
+    const usuariosUnicos = new Set();
+    
+    if (Chat.mensagens && Chat.mensagens.length > 0) {
+        Chat.mensagens.forEach(msg => {
+            usuariosUnicos.add(msg.usuario_id);
+        });
+    } else {
+        // Se não há mensagens ainda, considerar apenas o usuário logado
+        usuariosUnicos.add(State.usuario.id);
+    }
+    
+    const totalUsuarios = usuariosUnicos.size;
+    countElement.textContent = `${totalUsuarios} online`;
 }
 
 async function enviarMensagem(e) {
@@ -2265,6 +2391,7 @@ async function enviarMensagem(e) {
             Chat.ultimoId = result.data.id;
             
             renderizarMensagens();
+            atualizarUsuariosOnline();
         } else {
             showToast(result.message || 'Erro ao enviar mensagem', 'error');
         }
