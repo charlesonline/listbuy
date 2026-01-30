@@ -362,6 +362,22 @@ docker-compose ps
 # Limpar tudo (cuidado: apaga o banco de dados)
 docker-compose down -v
 ```
+### FTP
+
+```json
+{
+    "name": "ListBuyer",
+    "host": "ftp.easy-tecno.com.br",
+    "protocol": "ftp",
+    "port": 21,
+    "username": "listbuy@easy-tecno.com.br",
+    "password": "pdX]}F?&vKhX2.",
+    "remotePath": "/",
+    "uploadOnSave": false,
+    "useTempFile": false,
+    "openSsh": false
+}
+```
 
 ## 📝 Licença
 
