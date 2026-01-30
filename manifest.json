@@ -1,6 +1,6 @@
 {
-    "name": "listbuy",
-    "short_name": "List Buy",
+    "name": "Lista de Compras",
+    "short_name": "Lista de Compras",
     "icons": [
         {
             "src": "./img/icon/icon2.png",
