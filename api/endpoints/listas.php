@@ -40,9 +40,9 @@ try {
                 $id = $_GET['id'];
                 
                 if (isset($_GET['itens'])) {
-                    $resultado = $lista->buscarComItens($id);
+                    $resultado = $lista->buscarComItens($id, $usuario_logado['id']);
                 } else {
-                    $resultado = $lista->buscarPorId($id);
+                    $resultado = $lista->buscarPorIdComPermissoes($id, $usuario_logado['id']);
                 }
                 
                 if ($resultado) {
@@ -91,6 +91,14 @@ try {
             }
 
             $id = $_GET['id'];
+            
+            // Verificar se usuário pode editar a lista
+            if (!$lista->usuarioPodeEditar($id, $usuario_logado['id'])) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Você não tem permissão para editar esta lista']);
+                break;
+            }
+            
             $dados = [
                 'nome' => $input['nome'] ?? '',
                 'descricao' => $input['descricao'] ?? ''

@@ -289,6 +289,47 @@ function limparFormularioLista() {
     $('#inputDescricaoLista').value = '';
 }
 
+function abrirModalEditarLista() {
+    if (!State.listaAtual) {
+        showToast('Nenhuma lista selecionada', 'warning');
+        return;
+    }
+    
+    $('#inputEditarNomeLista').value = State.listaAtual.nome;
+    $('#inputEditarDescricaoLista').value = State.listaAtual.descricao || '';
+    showModal('modalEditarLista');
+}
+
+async function atualizarLista(dados) {
+    if (!State.listaAtual) {
+        showToast('Nenhuma lista selecionada', 'warning');
+        return;
+    }
+    
+    showLoading();
+    try {
+        await apiCall(`listas.php?id=${State.listaAtual.id}`, 'PUT', dados);
+        showToast('Lista atualizada com sucesso!');
+        
+        // Atualizar o estado local
+        State.listaAtual.nome = dados.nome;
+        State.listaAtual.descricao = dados.descricao;
+        
+        // Atualizar a interface
+        $('#tituloLista').textContent = dados.nome;
+        $('#descricaoLista').textContent = dados.descricao || '';
+        
+        hideModal('modalEditarLista');
+        
+        // Recarregar a lista de listas
+        await carregarListas();
+    } catch (error) {
+        console.error('Erro ao atualizar lista:', error);
+    } finally {
+        showLoading(false);
+    }
+}
+
 // ========================================
 // CATEGORIAS - CRUD
 // ========================================
@@ -470,6 +511,11 @@ async function abrirLista(listaId) {
         
         $('#tituloLista').textContent = result.data.nome;
         $('#descricaoLista').textContent = result.data.descricao || '';
+        
+        // Mostrar botão de editar apenas se for proprietário ou tiver permissão
+        const podeEditar = result.data.eh_proprietario === 1 || result.data.pode_editar_compartilhada === 1;
+        console.log('Pode editar:', podeEditar, 'eh_proprietario:', result.data.eh_proprietario, 'pode_editar_compartilhada:', result.data.pode_editar_compartilhada);
+        $('#btnEditarLista').style.display = podeEditar ? 'block' : 'none';
         
         // Carregar marcações persistidas
         await carregarMarcacoes(listaId);
@@ -1246,6 +1292,24 @@ function inicializarEventListeners() {
         }
         
         criarLista({ nome, descricao });
+    });
+    
+    // Editar Lista
+    $('#btnEditarLista').addEventListener('click', () => {
+        abrirModalEditarLista();
+    });
+    
+    // Salvar Edição da Lista
+    $('#btnSalvarEdicaoLista').addEventListener('click', () => {
+        const nome = $('#inputEditarNomeLista').value.trim();
+        const descricao = $('#inputEditarDescricaoLista').value.trim();
+        
+        if (!nome) {
+            showToast('Nome é obrigatório', 'warning');
+            return;
+        }
+        
+        atualizarLista({ nome, descricao });
     });
     
     // Voltar para listas

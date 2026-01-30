@@ -45,6 +45,25 @@ class Lista {
         $stmt->execute();
         return $stmt->fetch();
     }
+    
+    // Buscar lista por ID com informações de permissão do usuário
+    public function buscarPorIdComPermissoes($id, $usuario_id) {
+        $query = "
+            SELECT l.*, 
+                   CASE WHEN l.usuario_id = :usuario_id THEN 1 ELSE 0 END as eh_proprietario,
+                   lc.pode_editar as pode_editar_compartilhada,
+                   u.nome as proprietario_nome
+            FROM " . $this->table . " l
+            LEFT JOIN usuarios u ON l.usuario_id = u.id
+            LEFT JOIN lista_compartilhamentos lc ON l.id = lc.lista_id AND lc.usuario_id = :usuario_id
+            WHERE l.id = :id
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':usuario_id', $usuario_id);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
 
     // Criar nova lista
     public function criar($dados) {
@@ -84,8 +103,14 @@ class Lista {
     }
 
     // Buscar lista com itens
-    public function buscarComItens($id) {
-        $lista = $this->buscarPorId($id);
+    public function buscarComItens($id, $usuario_id = null) {
+        // Se usuario_id for fornecido, buscar com permissões
+        if ($usuario_id) {
+            $lista = $this->buscarPorIdComPermissoes($id, $usuario_id);
+        } else {
+            $lista = $this->buscarPorId($id);
+        }
+        
         if (!$lista) return null;
 
         $query = "
@@ -124,5 +149,29 @@ class Lista {
         
         $result = $stmt->fetch();
         return $result['pode_acessar'] > 0;
+    }
+    
+    // Verificar se usuário pode editar uma lista (proprietário ou compartilhado com permissão)
+    public function usuarioPodeEditar($lista_id, $usuario_id) {
+        $query = "
+            SELECT l.usuario_id, lc.pode_editar
+            FROM " . $this->table . " l
+            LEFT JOIN lista_compartilhamentos lc ON l.id = lc.lista_id AND lc.usuario_id = :usuario_id
+            WHERE l.id = :lista_id AND l.ativa = 1
+        ";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':lista_id', $lista_id);
+        $stmt->bindParam(':usuario_id', $usuario_id);
+        $stmt->execute();
+        
+        $result = $stmt->fetch();
+        
+        if (!$result) {
+            return false;
+        }
+        
+        // É proprietário ou tem permissão de edição
+        return $result['usuario_id'] == $usuario_id || $result['pode_editar'] == 1;
     }
 }
