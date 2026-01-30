@@ -36,19 +36,19 @@ try {
             
             if (isset($_GET['id'])) {
                 $id = $_GET['id'];
-                $resultado = $compra->buscarComItens($id);
+                $resultado = $compra->buscarComItens($id, $usuario_logado['id']);
                 
                 if ($resultado) {
                     echo json_encode(['success' => true, 'data' => $resultado]);
                 } else {
                     http_response_code(404);
-                    echo json_encode(['success' => false, 'message' => 'Compra não encontrada']);
+                    echo json_encode(['success' => false, 'message' => 'Compra não encontrada ou sem permissão']);
                 }
             } else {
                 $lista_id = $_GET['lista_id'] ?? null;
                 $limit = $_GET['limit'] ?? 10;
                 
-                $resultado = $compra->listarHistorico($lista_id, $limit);
+                $resultado = $compra->listarHistorico($usuario_logado['id'], $lista_id, $limit);
                 echo json_encode(['success' => true, 'data' => $resultado]);
             }
             break;

@@ -64,20 +64,28 @@ class Compra {
         }
     }
 
-    // Listar histórico de compras
-    public function listarHistorico($lista_id = null, $limit = 10) {
-        $query = "SELECT * FROM " . $this->table;
+    // Listar histórico de compras (somente das listas que o usuário possui ou tem acesso)
+    public function listarHistorico($usuario_id, $lista_id = null, $limit = 10) {
+        // Query para buscar compras de listas que o usuário é dono ou tem compartilhamento
+        $query = "SELECT c.* FROM " . $this->table . " c
+                  INNER JOIN listas l ON c.lista_id = l.id
+                  WHERE (l.usuario_id = :usuario_id 
+                     OR EXISTS (
+                         SELECT 1 FROM lista_compartilhamentos lc 
+                         WHERE lc.lista_id = l.id AND lc.usuario_id = :usuario_id
+                     ))";
         
         if ($lista_id) {
-            $query .= " WHERE lista_id = :lista_id";
+            $query .= " AND c.lista_id = :lista_id";
         }
         
-        $query .= " ORDER BY realizada_em DESC LIMIT :limit";
+        $query .= " ORDER BY c.realizada_em DESC LIMIT :limit";
         
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':usuario_id', $usuario_id, PDO::PARAM_INT);
         
         if ($lista_id) {
-            $stmt->bindParam(':lista_id', $lista_id);
+            $stmt->bindParam(':lista_id', $lista_id, PDO::PARAM_INT);
         }
         
         $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
@@ -86,13 +94,28 @@ class Compra {
         return $stmt->fetchAll();
     }
 
-    // Buscar compra com itens
-    public function buscarComItens($compra_id) {
-        $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $compra_id);
-        $stmt->execute();
+    // Buscar compra com itens (valida se usuário tem permissão)
+    public function buscarComItens($compra_id, $usuario_id = null) {
+        // Se usuario_id foi fornecido, valida permissão
+        if ($usuario_id !== null) {
+            $query = "SELECT c.* FROM " . $this->table . " c
+                      INNER JOIN listas l ON c.lista_id = l.id
+                      WHERE c.id = :id 
+                        AND (l.usuario_id = :usuario_id 
+                         OR EXISTS (
+                             SELECT 1 FROM lista_compartilhamentos lc 
+                             WHERE lc.lista_id = l.id AND lc.usuario_id = :usuario_id
+                         ))";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $compra_id);
+            $stmt->bindParam(':usuario_id', $usuario_id, PDO::PARAM_INT);
+        } else {
+            $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $compra_id);
+        }
         
+        $stmt->execute();
         $compra = $stmt->fetch();
         if (!$compra) return null;
 
